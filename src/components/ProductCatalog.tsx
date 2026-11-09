@@ -4,22 +4,16 @@ import {
   Plus, 
   Printer, 
   Layers, 
-  SlidersHorizontal, 
   Download, 
   Upload, 
   Edit3, 
-  Trash2, 
-  Check, 
   AlertTriangle, 
-  Package, 
   ArrowUpDown, 
   Barcode as BarcodeIcon, 
-  FileSpreadsheet,
-  Building2,
-  Sparkles
+  GripVertical,
+  FolderPlus
 } from 'lucide-react';
-import { Product, ProductStock, StoreLocation, LabelTemplateConfig, UserRole } from '../types';
-import { LabelPreview } from './LabelPreview';
+import { Product, ProductStock, StoreLocation, LabelTemplateConfig, UserRole, PrintQueueItem } from '../types';
 import { audioService } from '../services/audioService';
 
 interface ProductCatalogProps {
@@ -28,6 +22,8 @@ interface ProductCatalogProps {
   stores: StoreLocation[];
   onQuickPrint: (product: Product) => void;
   onAddToBatch: (product: Product, quantity: number) => void;
+  onOpenBatchPrint?: () => void;
+  batchQueue?: PrintQueueItem[];
   onAdjustStock: (product: Product) => void;
   onEditProduct: (product: Product) => void;
   onAddNewProduct: () => void;
@@ -43,19 +39,19 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   stores,
   onQuickPrint,
   onAddToBatch,
+  onOpenBatchPrint,
+  batchQueue = [],
   onAdjustStock,
   onEditProduct,
   onAddNewProduct,
-  onDeleteProduct,
   onOpenImport,
   userRole,
-  templates,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterLowStockOnly, setFilterLowStockOnly] = useState<boolean>(false);
-  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [batchQuantities, setBatchQuantities] = useState<Record<string, number>>({});
+  const [isDragOverTray, setIsDragOverTray] = useState<boolean>(false);
 
   const categories = ['ALL', ...Array.from(new Set(products.map((p) => p.category)))];
 
@@ -65,7 +61,8 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       product.name.toLowerCase().includes(term) ||
       product.sku.toLowerCase().includes(term) ||
       product.barcode.toLowerCase().includes(term) ||
-      product.brand.toLowerCase().includes(term);
+      product.brand.toLowerCase().includes(term) ||
+      product.category.toLowerCase().includes(term);
 
     const matchesCategory = selectedCategory === 'ALL' || product.category === selectedCategory;
 
@@ -80,6 +77,44 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
   const setBatchQty = (productId: string, val: number) => {
     setBatchQuantities({ ...batchQuantities, [productId]: Math.max(1, val) });
+  };
+
+  // Drag & Drop from Catalog Row to Multi-Category Print Tray
+  const handleRowDragStart = (e: React.DragEvent, product: Product) => {
+    e.dataTransfer.setData('application/x-catalog-product-id', product.id);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleTrayDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    if (!isDragOverTray) setIsDragOverTray(true);
+  };
+
+  const handleTrayDragLeave = () => {
+    setIsDragOverTray(false);
+  };
+
+  const handleTrayDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverTray(false);
+    const productId = e.dataTransfer.getData('application/x-catalog-product-id');
+    if (productId) {
+      const found = products.find((p) => p.id === productId);
+      if (found) {
+        onAddToBatch(found, getBatchQty(found.id));
+        audioService.playScanBeep();
+      }
+    }
+  };
+
+  // Add all filtered products from the current category to Batch Print
+  const handleAddFilteredCategoryToBatch = () => {
+    filteredProducts.forEach((p) => {
+      onAddToBatch(p, getBatchQty(p.id));
+    });
+    audioService.playScanBeep();
+    if (onOpenBatchPrint) onOpenBatchPrint();
   };
 
   // Export Catalog to CSV
@@ -105,11 +140,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     document.body.removeChild(link);
   };
 
+  const totalBatchLabels = batchQueue.reduce((sum, item) => sum + item.quantity, 0);
+  const batchCategories = Array.from(new Set(batchQueue.map((i) => i.product.category)));
+
   return (
     <div className="space-y-4">
       {/* Top Controls Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-          {/* Search Field */}
+        {/* Search Field */}
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -135,6 +173,18 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
               </option>
             ))}
           </select>
+
+          {/* Add Entire Selected Category to Print Batch */}
+          {selectedCategory !== 'ALL' && filteredProducts.length > 0 && (
+            <button
+              onClick={handleAddFilteredCategoryToBatch}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 rounded-xl text-xs font-bold transition"
+              title={`Tambahkan semua produk kategori ${selectedCategory} ke Batch Print`}
+            >
+              <FolderPlus className="w-3.5 h-3.5 text-blue-600" />
+              + Print Kategori ({filteredProducts.length})
+            </button>
+          )}
 
           {/* Low Stock Filter Button */}
           <button
@@ -184,6 +234,49 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         </div>
       </div>
 
+      {/* Multi-Category Drag & Drop Batch Print Dropzone Bar */}
+      <div
+        onDragOver={handleTrayDragOver}
+        onDragLeave={handleTrayDragLeave}
+        onDrop={handleTrayDrop}
+        className={`p-3.5 rounded-2xl border-2 border-dashed transition-all flex flex-col sm:flex-row items-center justify-between gap-3 ${
+          isDragOverTray
+            ? 'bg-emerald-50 border-emerald-500 shadow-md scale-[1.005]'
+            : batchQueue.length > 0
+            ? 'bg-emerald-50/50 border-emerald-300'
+            : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+            <Layers className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-800 flex items-center gap-2 flex-wrap">
+              <span>Multi-Category Batch Print Tray (Drag &amp; Drop Produk ke Sini)</span>
+              {batchQueue.length > 0 && (
+                <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-extrabold">
+                  {batchQueue.length} Produk • {totalBatchLabels} Label ({batchCategories.join(', ')})
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Tarik (drag) baris produk dari tabel di bawah ke kotak ini, atau klik tombol <strong>Print</strong> untuk menggabungkan produk beda kategori &amp; barcode (misal: Indomie + Kecap/Saus).
+            </p>
+          </div>
+        </div>
+
+        {onOpenBatchPrint && (
+          <button
+            onClick={onOpenBatchPrint}
+            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex-shrink-0"
+          >
+            <Printer className="w-3.5 h-3.5 text-emerald-400" />
+            Buka Multi-Category Print ({totalBatchLabels})
+          </button>
+        )}
+      </div>
+
       {/* Products Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -215,6 +308,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   const isLow = currentQty <= threshold;
                   const isAttachedExample =
                     product.sku === '1001040' || product.sku === '1001041';
+                  const inBatchItem = batchQueue.find((q) => q.product.id === product.id);
 
                   // Total stock across all branches
                   const totalNetworkStock = (Object.values(product.stocks) as ProductStock[]).reduce(
@@ -225,17 +319,28 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   return (
                     <tr
                       key={product.id}
-                      className="hover:bg-slate-50/80 transition group"
+                      draggable
+                      onDragStart={(e) => handleRowDragStart(e, product)}
+                      className={`hover:bg-slate-50/80 transition group cursor-grab active:cursor-grabbing ${
+                        inBatchItem ? 'bg-emerald-50/30' : ''
+                      }`}
+                      title="Drag baris ini ke Multi-Category Batch Print Tray di atas untuk menambahkan ke cetakan"
                     >
                       {/* Product Name & SKU */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
+                          <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-slate-500 flex-shrink-0" />
                           <div>
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                               {product.name}
                               {isAttachedExample && (
                                 <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-tight">
                                   ★ Attached Example
+                                </span>
+                              )}
+                              {inBatchItem && (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded">
+                                  In Batch ({inBatchItem.quantity}x)
                                 </span>
                               )}
                             </div>
@@ -246,7 +351,9 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                               <span>•</span>
                               <span>{product.brand}</span>
                               <span>•</span>
-                              <span>{product.category}</span>
+                              <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+                                {product.category}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -340,7 +447,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                           <button
                             onClick={() => onQuickPrint(product)}
                             className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition active:scale-95"
-                            title="Instant Single Print"
+                            title="Add & Open Multi-Category Print Preview"
                           >
                             <Printer className="w-3.5 h-3.5" />
                             Print

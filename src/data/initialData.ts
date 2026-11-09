@@ -116,7 +116,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'store-xml': { quantity: 18, minThreshold: 25 }, // Low stock in Kalimalang!
       'store-iqm': { quantity: 8, minThreshold: 15 }, // Low stock in Iqromart!
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Indofood CBP Sukses Makmur',
     locationBin: 'A-04-02',
   },
@@ -142,7 +142,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'store-klp': { quantity: 12, minThreshold: 20 }, // Low stock in Pdk Kelapa!
       'store-mkr': { quantity: 9, minThreshold: 15 }, // Low stock in Mekar Jaya!
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Indofood CBP Sukses Makmur',
     locationBin: 'A-04-03',
   },
@@ -174,7 +174,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(280, 50, {
       'store-cpm': { quantity: 24, minThreshold: 30 }, // Low stock in Cipamart!
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Indofood CBP Sukses Makmur',
     locationBin: 'A-04-01',
   },
@@ -199,7 +199,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(55, 20, {
       'store-xml': { quantity: 8, minThreshold: 15 }, // Low stock in Kalimalang!
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Ultrajaya Milk Industry Tbk',
     locationBin: 'C-01-04',
   },
@@ -224,7 +224,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(60, 20, {
       'store-snm': { quantity: 10, minThreshold: 15 },
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Ultrajaya Milk Industry Tbk',
     locationBin: 'C-01-05',
   },
@@ -249,7 +249,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(190, 40, {
       'store-klp': { quantity: 15, minThreshold: 30 },
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Tirta Investama Danone',
     locationBin: 'B-02-01',
   },
@@ -274,7 +274,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(75, 20, {
       'store-mkr': { quantity: 7, minThreshold: 15 },
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Indofood Fritolay Makmur',
     locationBin: 'D-03-02',
   },
@@ -306,9 +306,59 @@ export const INITIAL_PRODUCTS: Product[] = [
     stocks: createBranchStocks(50, 15, {
       'store-iqm': { quantity: 5, minThreshold: 10 },
     }),
-    dateEffective: '20/09/2026',
+    dateEffective: new Date().toLocaleDateString('en-GB'),
     supplier: 'PT Unilever Indonesia Tbk',
     locationBin: 'E-01-03',
+  },
+  {
+    id: 'prod-9',
+    sku: '1006010',
+    barcode: '8991002105010',
+    barcodeType: 'EAN13',
+    name: 'ABC KECAP MANIS BOTOL 275ML',
+    category: 'Sauce & Condiments',
+    brand: 'ABC',
+    department: 'Grocery / Condiments',
+    currency: 'Rp.',
+    pricing: {
+      unitLabel: 'BTL',
+      unitQuantity: 1,
+      unitPrice: 17500,
+      bulkLabel: 'CRT',
+      bulkQuantity: 24,
+      bulkPrice: 408000,
+    },
+    stocks: createBranchStocks(85, 20, {
+      'store-krg': { quantity: 90, minThreshold: 20 },
+    }),
+    dateEffective: new Date().toLocaleDateString('en-GB'),
+    supplier: 'PT Heinz ABC Indonesia',
+    locationBin: 'A-02-01',
+  },
+  {
+    id: 'prod-10',
+    sku: '1006011',
+    barcode: '089686060348',
+    barcodeType: 'EAN13',
+    name: 'INDOFOOD SAUS SAMBAL PEDAS 335ML',
+    category: 'Sauce & Condiments',
+    brand: 'Indofood',
+    department: 'Grocery / Condiments',
+    currency: 'Rp.',
+    pricing: {
+      unitLabel: 'BTL',
+      unitQuantity: 1,
+      unitPrice: 14900,
+      bulkLabel: 'CRT',
+      bulkQuantity: 24,
+      bulkPrice: 345600,
+    },
+    stocks: createBranchStocks(65, 15, {
+      'store-krg': { quantity: 70, minThreshold: 15 },
+    }),
+    dateEffective: new Date().toLocaleDateString('en-GB'),
+    supplier: 'PT Indofood CBP Sukses Makmur',
+    locationBin: 'A-02-02',
   },
 ];
 

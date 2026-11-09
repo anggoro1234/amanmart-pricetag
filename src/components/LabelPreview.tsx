@@ -1,6 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
 import { Product, LabelTemplateConfig, StoreLocation } from '../types';
+
+// Format current live date as DD/MM/YYYY (e.g. 09/11/2026)
+const formatLivePrintDate = (date: Date = new Date()): string => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 interface LabelPreviewProps {
   product: Product;
@@ -20,6 +28,16 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
   isPrintMode = false,
 }) => {
   const barcodeRef = useRef<SVGSVGElement | null>(null);
+  const [livePrintDate, setLivePrintDate] = useState<string>(() => formatLivePrintDate());
+
+  // Keep print date synced live with current system clock
+  useEffect(() => {
+    setLivePrintDate(formatLivePrintDate());
+    const timer = setInterval(() => {
+      setLivePrintDate(formatLivePrintDate());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Generate crisp dynamic barcode with JsBarcode
   useEffect(() => {
@@ -31,13 +49,13 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
 
       JsBarcode(barcodeRef.current, product.barcode, {
         format: format,
-        width: 1.4 * scale,
-        height: (template.barcodeHeightMm || 12) * 2.8 * scale,
+        width: 1.35 * scale,
+        height: (template.barcodeHeightMm || 12) * 2.15 * scale,
         displayValue: true,
         font: 'monospace',
-        fontSize: 12 * scale,
-        textMargin: 2 * scale,
-        margin: 2 * scale,
+        fontSize: 10.5 * scale,
+        textMargin: 1 * scale,
+        margin: 1 * scale,
         background: '#ffffff',
         lineColor: '#000000',
       });
@@ -48,10 +66,11 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
           JsBarcode(barcodeRef.current, product.barcode, {
             format: 'CODE128',
             width: 1.2 * scale,
-            height: (template.barcodeHeightMm || 12) * 2.8 * scale,
+            height: (template.barcodeHeightMm || 12) * 2.15 * scale,
             displayValue: true,
-            fontSize: 11 * scale,
-            margin: 2 * scale,
+            fontSize: 10 * scale,
+            textMargin: 1 * scale,
+            margin: 1 * scale,
           });
         }
       } catch {
@@ -150,7 +169,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
             )}
             {template.showDate && (
               <span className="text-slate-500 text-[8px] mt-0.5">
-                {product.dateEffective || new Date().toLocaleDateString('en-GB')}
+                {livePrintDate}
               </span>
             )}
           </div>
@@ -214,7 +233,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
           <svg ref={barcodeRef} className="block -ml-1" />
           <div className="text-right font-mono text-[8px] text-slate-500">
             <div>SKU: {product.sku}</div>
-            <div>EXP: {promo?.validUntil || '15/09/2026'}</div>
+            <div>{livePrintDate}</div>
           </div>
         </div>
       </div>
@@ -296,7 +315,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
           <svg ref={barcodeRef} className="block" />
           <div className="text-right font-mono text-xs">
             <div className="font-bold">SKU: {product.sku}</div>
-            <div className="text-slate-500">DATE: {product.dateEffective}</div>
+            <div className="text-slate-500">DATE: {livePrintDate}</div>
           </div>
         </div>
       </div>
@@ -337,7 +356,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
         <svg ref={barcodeRef} className="block -ml-1" />
         <div className="text-right font-mono text-[8px] text-slate-500 pb-0.5">
           {template.showSku && <div>{product.sku}</div>}
-          {template.showDate && <div>{product.dateEffective}</div>}
+          {template.showDate && <div>{livePrintDate}</div>}
         </div>
       </div>
     </div>

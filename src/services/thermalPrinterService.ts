@@ -122,12 +122,17 @@ class ThermalPrinterService {
     const bcType = product.barcode.length === 13 ? 'EAN13' : '128';
     lines.push(`BARCODE 16, 96, "${bcType}", 55, 1, 0, 2, 2, "${product.barcode}"`);
 
-    // SKU and Date
+    // SKU and Live Print Date (Today)
+    const now = new Date();
+    const livePrintDate = `${String(now.getDate()).padStart(2, '0')}/${String(
+      now.getMonth() + 1
+    ).padStart(2, '0')}/${now.getFullYear()}`;
+
     if (template.showSku) {
       lines.push(`TEXT ${widthDots - 130}, 105, "2", 0, 1, 1, "${product.sku}"`);
     }
     if (template.showDate) {
-      lines.push(`TEXT ${widthDots - 130}, 125, "1", 0, 1, 1, "${product.dateEffective}"`);
+      lines.push(`TEXT ${widthDots - 130}, 125, "1", 0, 1, 1, "${livePrintDate}"`);
     }
 
     lines.push(`PRINT ${copies}, 1`);
@@ -146,6 +151,11 @@ class ThermalPrinterService {
     const pushText = (str: string) => {
       chunks.push(encoder.encode(str + '\n'));
     };
+
+    const now = new Date();
+    const livePrintDate = `${String(now.getDate()).padStart(2, '0')}/${String(
+      now.getMonth() + 1
+    ).padStart(2, '0')}/${now.getFullYear()}`;
 
     for (let c = 0; c < copies; c++) {
       // ESC @ (Initialize)
@@ -181,8 +191,8 @@ class ThermalPrinterService {
       pushBytes(0x1D, 0x6B, 73, bcData.length);
       chunks.push(bcData);
 
-      // SKU and date
-      pushText(`\nSKU: ${product.sku} | Date: ${product.dateEffective}`);
+      // SKU and live print date
+      pushText(`\nSKU: ${product.sku} | Date: ${livePrintDate}`);
 
       // Feed lines
       pushBytes(0x1B, 0x64, 3);
@@ -201,8 +211,8 @@ class ThermalPrinterService {
     return result;
   }
 
-  // Direct print using system print dialog with pristine zero-margin thermal label styling
-  triggerSystemPrint(labelElementId: string) {
+  // Direct print using system print dialog with 3-column side-by-side layout (or custom columns)
+  triggerSystemPrint(labelElementId: string, columns: number = 3) {
     const printElement = document.getElementById(labelElementId);
     if (!printElement) {
       window.print();
@@ -238,6 +248,8 @@ class ThermalPrinterService {
       stylesHtml += el.outerHTML;
     });
 
+    const isMultiColumn = columns > 1;
+
     doc.open();
     doc.write(`
       <!DOCTYPE html>
@@ -248,22 +260,42 @@ class ThermalPrinterService {
           <style>
             @page {
               size: auto;
-              margin: 0mm;
+              margin: 4mm;
             }
             body {
               margin: 0;
-              padding: 0;
+              padding: 2mm;
               background: #ffffff;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+              box-sizing: border-box;
             }
             .print-container {
-              width: 100%;
+              display: grid !important;
+              grid-template-columns: ${
+                isMultiColumn ? `repeat(${columns}, minmax(0, 1fr))` : '1fr'
+              } !important;
+              gap: 2.5mm !important;
+              width: 100% !important;
+              align-items: start !important;
+              justify-items: center !important;
               page-break-after: auto;
             }
+            .print-container > div {
+              width: 100% !important;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
             .label-item {
-              page-break-inside: avoid;
-              break-inside: avoid;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              max-width: 100% !important;
+            }
+            .print\\:hidden {
+              display: none !important;
             }
           </style>
         </head>

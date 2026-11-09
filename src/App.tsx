@@ -121,17 +121,24 @@ export default function App() {
   const attachedExample1 = products.find((p) => p.sku === '1001040') || products[0];
   const attachedExample2 = products.find((p) => p.sku === '1001041') || products[1];
 
-  // Quick single print handler
+  // Quick single print handler (preserves existing batch items or adds this product)
   const handleQuickPrint = (product: Product) => {
-    // Add single item and open batch print modal for instant thermal preview & print
-    const newItem: PrintQueueItem = {
-      id: `print-${Date.now()}-${product.id}`,
-      product,
-      quantity: 1,
-      templateId: activeTemplateId,
-      storeId: activeStore.id,
-    };
-    setBatchQueue([newItem]);
+    setBatchQueue((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev;
+      }
+      return [
+        ...prev,
+        {
+          id: `print-${Date.now()}-${product.id}`,
+          product,
+          quantity: 1,
+          templateId: activeTemplateId,
+          storeId: activeStore.id,
+        },
+      ];
+    });
     setBatchPrintOpen(true);
     audioService.playScanBeep();
   };
@@ -367,6 +374,8 @@ export default function App() {
             stores={stores}
             onQuickPrint={handleQuickPrint}
             onAddToBatch={handleAddToBatch}
+            onOpenBatchPrint={() => setBatchPrintOpen(true)}
+            batchQueue={batchQueue}
             onAdjustStock={(p) => {
               setAdjustingProduct(p);
               setStockAdjustOpen(true);
@@ -464,6 +473,9 @@ export default function App() {
         isOpen={batchPrintOpen}
         onClose={() => setBatchPrintOpen(false)}
         queue={batchQueue}
+        products={products}
+        onAddProduct={handleAddToBatch}
+        onReorderQueue={setBatchQueue}
         onUpdateQuantity={handleUpdateBatchQuantity}
         onRemoveItem={handleRemoveBatchItem}
         onClearQueue={handleClearBatchQueue}

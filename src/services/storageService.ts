@@ -84,10 +84,11 @@ class StorageService {
     if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
     } else {
-      // Ensure existing products have stocks for all 8 branches
+      // Ensure existing products have stocks for all 8 branches & merge any new default products
       try {
         const storedProds: Product[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
         let modified = false;
+        const todayFormatted = new Date().toLocaleDateString('en-GB');
         const updatedProds = storedProds.map((p) => {
           let pModified = false;
           const currentStocks = { ...(p.stocks || {}) };
@@ -104,12 +105,27 @@ class StorageService {
               };
             }
           });
+          if (p.dateEffective !== todayFormatted) {
+            pModified = true;
+          }
           if (pModified) {
             modified = true;
-            return { ...p, stocks: currentStocks };
+            return { ...p, stocks: currentStocks, dateEffective: todayFormatted };
           }
           return p;
         });
+
+        // Merge any newly added default products (e.g. Sauce & Condiments) not yet in localStorage
+        INITIAL_PRODUCTS.forEach((initProd) => {
+          const exists = updatedProds.some(
+            (p) => p.id === initProd.id || p.sku === initProd.sku || p.barcode === initProd.barcode
+          );
+          if (!exists) {
+            updatedProds.push(initProd);
+            modified = true;
+          }
+        });
+
         if (modified) {
           localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProds));
         }
