@@ -134,6 +134,24 @@ class StorageService {
 
     if (!localStorage.getItem(STORAGE_KEYS.TEMPLATES)) {
       localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(INITIAL_TEMPLATES));
+    } else {
+      // Upgrade default supermarket shelf template size if still using old small 65x28 dimensions
+      try {
+        const storedTemplates: LabelTemplateConfig[] = JSON.parse(
+          localStorage.getItem(STORAGE_KEYS.TEMPLATES) || '[]'
+        );
+        let tmplModified = false;
+        const updatedTemplates = storedTemplates.map((t) => {
+          if (t.id === 'tmpl-supermarket' && t.widthMm <= 65 && t.heightMm <= 28) {
+            tmplModified = true;
+            return { ...t, widthMm: 72, heightMm: 35, barcodeHeightMm: 13 };
+          }
+          return t;
+        });
+        if (tmplModified) {
+          localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(updatedTemplates));
+        }
+      } catch {}
     }
     if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0])); // Default to Admin

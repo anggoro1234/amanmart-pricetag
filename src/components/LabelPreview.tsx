@@ -49,12 +49,12 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
 
       JsBarcode(barcodeRef.current, product.barcode, {
         format: format,
-        width: 1.35 * scale,
-        height: (template.barcodeHeightMm || 12) * 2.15 * scale,
+        width: 1.5 * scale,
+        height: (template.barcodeHeightMm || 13) * 2.35 * scale,
         displayValue: true,
         font: 'monospace',
-        fontSize: 10.5 * scale,
-        textMargin: 1 * scale,
+        fontSize: 11.5 * scale,
+        textMargin: 1.5 * scale,
         margin: 1 * scale,
         background: '#ffffff',
         lineColor: '#000000',
@@ -65,11 +65,11 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
         if (barcodeRef.current) {
           JsBarcode(barcodeRef.current, product.barcode, {
             format: 'CODE128',
-            width: 1.2 * scale,
-            height: (template.barcodeHeightMm || 12) * 2.15 * scale,
+            width: 1.35 * scale,
+            height: (template.barcodeHeightMm || 13) * 2.35 * scale,
             displayValue: true,
-            fontSize: 10 * scale,
-            textMargin: 1 * scale,
+            fontSize: 11 * scale,
+            textMargin: 1.5 * scale,
             margin: 1 * scale,
           });
         }
@@ -90,7 +90,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
     return `${product.currency} ${amount.toLocaleString('id-ID')}`;
   };
 
-  // 1. Supermarket Shelf Tag (Exact Match to User's image.png)
+  // 1. Supermarket Shelf Tag (Wider & Larger to fit physical retail price tag rail holder)
   if (template.type === 'supermarket_shelf') {
     return (
       <div
@@ -98,14 +98,14 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
         style={{
           width: isPrintMode ? `${template.widthMm}mm` : `${widthPx}px`,
           height: isPrintMode ? `${template.heightMm}mm` : `${heightPx}px`,
-          padding: `${3 * scale}px ${5 * scale}px`,
+          padding: `${4 * scale}px ${6 * scale}px`,
           boxSizing: 'border-box',
         }}
       >
         {/* Top: Product Name in clean dark blue uppercase */}
         <div
-          className="font-bold text-slate-700 tracking-tight leading-tight uppercase truncate"
-          style={{ fontSize: `${11 * scale}px`, marginBottom: `${2 * scale}px` }}
+          className="font-extrabold text-slate-800 tracking-tight leading-tight uppercase truncate"
+          style={{ fontSize: `${12.5 * scale}px`, marginBottom: `${2.5 * scale}px` }}
           title={product.name}
         >
           {product.name}
@@ -116,17 +116,17 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
           {/* Unit Price */}
           <div className="flex items-baseline gap-1 leading-none">
             <span
-              className="font-bold tracking-tight"
+              className="font-extrabold tracking-tight"
               style={{
                 color: template.primaryPriceColor || '#dc2626',
-                fontSize: `${17 * scale}px`,
+                fontSize: `${19.5 * scale}px`,
               }}
             >
               {formatMoney(product.pricing.unitPrice)}
             </span>
             <span
-              className="font-medium text-slate-500 uppercase"
-              style={{ fontSize: `${10 * scale}px` }}
+              className="font-semibold text-slate-600 uppercase"
+              style={{ fontSize: `${11 * scale}px` }}
             >
               / {product.pricing.unitLabel} / {product.pricing.unitQuantity}
             </span>
@@ -134,19 +134,19 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
 
           {/* Bulk/Carton Price */}
           {template.showBulkPrice && product.pricing.bulkPrice && product.pricing.bulkLabel && (
-            <div className="flex items-baseline gap-1 leading-none mt-0.5">
+            <div className="flex items-baseline gap-1 leading-none mt-1">
               <span
                 className="font-bold tracking-tight"
                 style={{
                   color: template.primaryPriceColor || '#dc2626',
-                  fontSize: `${13 * scale}px`,
+                  fontSize: `${14.5 * scale}px`,
                 }}
               >
                 {formatMoney(product.pricing.bulkPrice)}
               </span>
               <span
-                className="font-medium text-slate-500 uppercase"
-                style={{ fontSize: `${9 * scale}px` }}
+                className="font-semibold text-slate-600 uppercase"
+                style={{ fontSize: `${10 * scale}px` }}
               >
                 / {product.pricing.bulkLabel} / {product.pricing.bulkQuantity || 1}
               </span>
@@ -155,20 +155,23 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
         </div>
 
         {/* Bottom: Barcode on left + SKU & Effective Date on right */}
-        <div className="absolute bottom-1 left-1.5 right-1.5 flex items-end justify-between">
+        <div className="absolute bottom-1.5 left-2 right-2 flex items-end justify-between">
           <div className="flex-shrink-0">
             <svg ref={barcodeRef} className="block -ml-1" />
           </div>
 
           <div
-            className="flex flex-col items-center justify-end text-slate-600 font-mono text-right pb-1 leading-tight"
-            style={{ fontSize: `${9 * scale}px` }}
+            className="flex flex-col items-end justify-end text-slate-600 font-mono text-right pb-1 leading-tight"
+            style={{ fontSize: `${10 * scale}px` }}
           >
             {template.showSku && (
-              <span className="font-bold tracking-wide text-slate-700">{product.sku}</span>
+              <span className="font-bold tracking-wide text-slate-800">{product.sku}</span>
             )}
             {template.showDate && (
-              <span className="text-slate-500 text-[8px] mt-0.5">
+              <span
+                className="text-slate-600 font-semibold mt-0.5"
+                style={{ fontSize: `${9 * scale}px` }}
+              >
                 {livePrintDate}
               </span>
             )}

@@ -211,8 +211,8 @@ class ThermalPrinterService {
     return result;
   }
 
-  // Direct print using system print dialog with 3-column side-by-side layout (or custom columns)
-  triggerSystemPrint(labelElementId: string, columns: number = 3) {
+  // Direct print using system print dialog with 3-column side-by-side layout and wider/larger physical tag sizing
+  triggerSystemPrint(labelElementId: string, columns: number = 3, printSizeScale: number = 1.08) {
     const printElement = document.getElementById(labelElementId);
     if (!printElement) {
       window.print();
@@ -249,6 +249,7 @@ class ThermalPrinterService {
     });
 
     const isMultiColumn = columns > 1;
+    const tagHeightMm = Math.round(36 * printSizeScale);
 
     doc.open();
     doc.write(`
@@ -260,11 +261,11 @@ class ThermalPrinterService {
           <style>
             @page {
               size: auto;
-              margin: 4mm;
+              margin: 2.5mm;
             }
             body {
               margin: 0;
-              padding: 2mm;
+              padding: 1mm;
               background: #ffffff;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -275,21 +276,27 @@ class ThermalPrinterService {
               grid-template-columns: ${
                 isMultiColumn ? `repeat(${columns}, minmax(0, 1fr))` : '1fr'
               } !important;
-              gap: 2.5mm !important;
+              gap: 2mm !important;
               width: 100% !important;
-              align-items: start !important;
-              justify-items: center !important;
+              align-items: stretch !important;
+              justify-items: stretch !important;
               page-break-after: auto;
             }
             .print-container > div {
               width: 100% !important;
               display: flex !important;
               flex-direction: column !important;
-              align-items: center !important;
+              align-items: stretch !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
             }
             .label-item {
+              width: 100% !important;
+              min-height: ${tagHeightMm}mm !important;
+              height: ${tagHeightMm}mm !important;
+              padding: 2.2mm 3.2mm !important;
+              border: 1px solid #94a3b8 !important;
+              box-sizing: border-box !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               max-width: 100% !important;

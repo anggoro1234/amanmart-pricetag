@@ -55,6 +55,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   printerSettings,
 }) => {
   const [layoutMode, setLayoutMode] = useState<'side_by_side' | 'single_roll' | 'sheet_grid'>('side_by_side');
+  const [printSizeScale, setPrintSizeScale] = useState<number>(1.08);
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
   const [showRawCommands, setShowRawCommands] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
@@ -189,10 +190,10 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
 
     try {
       if (printerSettings.connectionType === 'browser_print') {
-        thermalPrinterService.triggerSystemPrint('batch-printable-labels-area', printColumns);
+        thermalPrinterService.triggerSystemPrint('batch-printable-labels-area', printColumns, printSizeScale);
       } else {
         // Bluetooth or Serial TSPL direct print
-        thermalPrinterService.triggerSystemPrint('batch-printable-labels-area', printColumns);
+        thermalPrinterService.triggerSystemPrint('batch-printable-labels-area', printColumns, printSizeScale);
       }
 
       // Play audio chime and trigger confetti
@@ -317,6 +318,20 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             >
               A4 Sheet Grid (3 Kolom)
             </button>
+          </div>
+
+          {/* Print Tag Size Selector for physical price tag holder */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-600">Ukuran Wadah Tag:</span>
+            <select
+              value={String(printSizeScale)}
+              onChange={(e) => setPrintSizeScale(parseFloat(e.target.value))}
+              className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-300 rounded-lg font-bold text-emerald-900 shadow-xs focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="0.95">Standar (68x34mm)</option>
+              <option value="1.08">Lebar Besar - Pas Wadah Rak (68x39mm)</option>
+              <option value="1.2">Extra Besar (68x43mm)</option>
+            </select>
           </div>
 
           {/* Clear Queue */}
@@ -591,16 +606,16 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                 {/* Printable container targeted by Thermal Print Service */}
                 <div
                   id="batch-printable-labels-area"
-                  className={`bg-white p-3.5 rounded-xl shadow-md border transition-all w-full max-w-[740px] ${
+                  className={`bg-white p-3 rounded-xl shadow-md border transition-all w-full max-w-[860px] ${
                     isDragOverStage
                       ? 'border-emerald-500 border-2 ring-4 ring-emerald-500/10'
                       : 'border-slate-300'
                   } ${
                     layoutMode === 'side_by_side'
-                      ? 'grid grid-cols-3 gap-2.5 justify-items-center items-start'
+                      ? 'grid grid-cols-3 gap-2 justify-items-stretch items-start'
                       : layoutMode === 'single_roll'
                       ? 'flex flex-col gap-3 items-center max-w-xs'
-                      : 'grid grid-cols-3 gap-2.5 p-4 border-dashed border-2 border-slate-400 justify-items-center items-start'
+                      : 'grid grid-cols-3 gap-2 p-3 border-dashed border-2 border-slate-400 justify-items-stretch items-start'
                   }`}
                 >
                   {flattenedLabels.length === 0 ? (
@@ -609,12 +624,13 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                     </div>
                   ) : (
                     flattenedLabels.map(({ item, copyIndex }, idx) => (
-                      <div key={`${item.id}-${copyIndex}-${idx}`} className="flex flex-col items-center">
+                      <div key={`${item.id}-${copyIndex}-${idx}`} className="flex flex-col items-center w-full">
                         <LabelPreview
                           product={item.product}
                           template={currentTemplate}
                           store={activeStore}
-                          scale={layoutMode === 'single_roll' ? 1.0 : 0.88}
+                          scale={layoutMode === 'single_roll' ? 1.05 : Math.min(1.05, 0.92 * printSizeScale)}
+                          className="w-full"
                           isPrintMode={false}
                         />
                         <div className="flex items-center gap-1 mt-1 print:hidden">

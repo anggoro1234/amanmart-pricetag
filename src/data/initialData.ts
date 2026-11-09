@@ -367,8 +367,8 @@ export const INITIAL_TEMPLATES: LabelTemplateConfig[] = [
     id: 'tmpl-supermarket',
     name: 'Supermarket Shelf Tag (Indonesian Retail - Attached Example)',
     type: 'supermarket_shelf',
-    widthMm: 65,
-    heightMm: 28,
+    widthMm: 72,
+    heightMm: 35,
     showStoreName: false,
     showBulkPrice: true,
     showSku: true,
@@ -376,7 +376,7 @@ export const INITIAL_TEMPLATES: LabelTemplateConfig[] = [
     showDepartment: false,
     fontFamily: 'sans',
     primaryPriceColor: '#e11d48', // Red bold like example
-    barcodeHeightMm: 12,
+    barcodeHeightMm: 13,
     dpi: 203,
   },
   {
